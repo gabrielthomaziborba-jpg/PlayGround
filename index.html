@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#071b26">
+  <title>Turbo Tour — Corrida de Kart</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game-shell">
+    <canvas id="game" aria-label="Jogo de corrida de kart"></canvas>
+    <header class="topbar">
+      <div class="brand"><span class="brand-mark">✦</span><span>TURBO<span class="brand-light"> TOUR</span></span></div>
+      <div class="track-pill"><span class="live-dot"></span> COPA ARCO-ÍRIS <span class="pill-divider">/</span> <b>ILHA DO SOL</b></div>
+      <button class="sound-button" id="soundButton" aria-label="Ativar ou desativar som">♫ <span>SOM</span></button>
+    </header>
+    <section class="hud" id="hud" aria-live="polite">
+      <div class="race-info"><div class="position" id="position">1<span>º</span></div><div class="race-label">POSIÇÃO</div></div>
+      <div class="lap-info"><span class="eyebrow">VOLTA</span><strong id="lap">1<span> / 3</span></strong><div class="lap-track"><i id="lapProgress"></i></div></div>
+      <div class="timer"><span class="eyebrow">TEMPO</span><strong id="timer">00:00.0</strong></div>
+      <div class="coin-counter"><span class="coin-icon">●</span><strong id="coins">00</strong><small>MOEDAS</small></div>
+      <div class="item-box" id="itemBox"><div class="item-icon">?</div><span>ITEM</span></div>
+    </section>
+    <div class="speedometer" id="speedometer"><div class="speed-number" id="speed">000</div><div class="speed-unit">KM/H</div><div class="speed-arc"><i id="speedArc"></i></div></div>
+    <div class="race-toast" id="toast"></div>
+    <div class="countdown" id="countdown"></div>
+    <div class="center-message" id="centerMessage"></div>
+    <aside class="controls-hint" id="controlsHint"><span>←</span><span>→</span> PILOTAR <i>·</i> <kbd>ESPAÇO</kbd> DRIFT <i>·</i> <kbd>X</kbd> ITEM</aside>
+    <div class="touch-controls" id="touchControls">
+      <div class="touch-steer"><button data-control="left" aria-label="Virar à esquerda">◀</button><button data-control="right" aria-label="Virar à direita">▶</button></div>
+      <div class="touch-drive"><button data-control="drift" aria-label="Derrapar">DRIFT</button><button data-control="item" aria-label="Usar item">✦</button><button class="accelerate" data-control="accelerate" aria-label="Acelerar">▲</button></div>
+    </div>
+    <section class="screen-overlay" id="startScreen">
+      <div class="start-card">
+        <div class="card-kicker"><span>★</span> UMA AVENTURA EM ALTA VELOCIDADE</div>
+        <h1>PEGUE<br><em>O VENTO.</em></h1>
+        <p>Curvas ensolaradas, atalhos secretos e uma linha de chegada esperando por você.</p>
+        <div class="race-meta"><div><span>🏁</span><b>3</b><small>VOLTAS</small></div><div><span>⚡</span><b>8</b><small>PILOTOS</small></div><div><span>🌴</span><b>1</b><small>ILHA</small></div></div>
+        <button class="primary-button" id="startButton">LARGAR AGORA <span>→</span></button>
+        <div class="start-controls"><span>⌨️ <b>SETAS</b> PILOTAR</span><span><b>ESPAÇO</b> DRIFT</span><span><b>X</b> ITEM</span></div>
+      </div>
+      <div class="side-note"><span>01 — 08</span><i></i> DESTINO: ILHA DO SOL</div>
+    </section>
+    <section class="screen-overlay hidden" id="resultScreen">
+      <div class="result-card"><div class="result-kicker">CORRIDA CONCLUÍDA</div><h2 id="resultTitle">QUE CORRIDA!</h2><p id="resultCopy">Você cruzou a linha de chegada.</p><div class="result-stats"><div><span>POSIÇÃO</span><b id="resultPosition">1º</b></div><div><span>TEMPO</span><b id="resultTime">00:00.0</b></div><div><span>MOEDAS</span><b id="resultCoins">00</b></div></div><button class="primary-button" id="againButton">CORRER DE NOVO <span>↻</span></button></div>
+    </section>
+    <footer class="bottom-note"><span>☀</span> ILHA DO SOL <i>·</i> VERÃO ETERNO <span class="footer-right">TURBO TOUR <b>™</b></span></footer>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
