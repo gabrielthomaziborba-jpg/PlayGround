@@ -2,7 +2,7 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   const $ = (id) => document.getElementById(id);
-  const ui = { start: $('startScreen'), result: $('resultScreen'), startBtn: $('startButton'), again: $('againButton'), hud: $('hud'), position: $('position'), lap: $('lap'), lapProgress: $('lapProgress'), timer: $('timer'), coins: $('coins'), item: $('itemBox'), speed: $('speed'), speedArc: $('speedArc'), countdown: $('countdown'), message: $('centerMessage'), toast: $('toast') };
+  const ui = { start: $('startScreen'), result: $('resultScreen'), startBtn: $('startButton'), again: $('againButton'), hud: $('hud'), position: $('position'), lap: $('lap'), lapProgress: $('lapProgress'), timer: $('timer'), coins: $('coins'), item: $('itemBox'), speed: $('speed'), speedArc: $('speedArc'), driftArc: $('driftArc'), driftPercent: $('driftPercent'), countdown: $('countdown'), message: $('centerMessage'), toast: $('toast') };
   const TAU = Math.PI * 2, LAP_LENGTH = 11500, TOTAL_LAPS = 3, MAX_SPEED = 245;
   let W = 1280, H = 720, dpr = 1, last = 0, running = false, startedAt = 0, elapsed = 0, raf = 0;
   let player, racers, objects, keys = {}, touch = {}, audio = null, soundOn = false, toastTime = 0;
@@ -17,7 +17,7 @@
   const mix=(a,b,t)=>a+(b-a)*t;
   const hash=(n)=>{let x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x)};
   function reset(){
-    player={distance:0,lane:0,speed:0,coins:0,item:null,drift:0,boost:0,invuln:0,finished:false};
+    player={distance:0,lane:0,speed:0,coins:0,item:null,drift:0,driftCharge:0,boost:0,invuln:0,finished:false,_lap:1};
     racers=Array.from({length:7},(_,i)=>({name:racerNames[i],color:palette[i],distance:-i*28-30, lane:(i%2?-.32:.32), speed:0,phase:hash(i+3)*TAU, finished:false}));
     objects=[];
     for(let n=0;n<68;n++){
@@ -26,7 +26,7 @@
       if(n%4===0) objects.push({type:'box',distance:base+305,lane:(hash(n+20)-.5)*1.25,used:false});
     }
     elapsed=0;startedAt=0;last=0;running=false;toastTime=0;
-    ui.position.innerHTML='1<span>º</span>';ui.lap.innerHTML='1<span> / 3</span>';ui.lapProgress.style.width='0%';ui.coins.textContent='00';ui.speed.textContent='000';ui.speedArc.style.width='0%';ui.item.querySelector('.item-icon').textContent='?';
+    ui.position.innerHTML='1<span>º</span>';ui.lap.innerHTML='1<span> / 3</span>';ui.lapProgress.style.width='0%';ui.coins.textContent='00';ui.speed.textContent='000';ui.speedArc.style.width='0%';ui.driftArc.style.width='0%';ui.driftPercent.textContent='0%';ui.item.querySelector('.item-icon').textContent='?';
     ui.countdown.textContent='';ui.message.textContent='';ui.result.classList.add('hidden');ui.start.classList.remove('hidden');
     draw(0);
   }
@@ -144,6 +144,14 @@
     player.lane=clamp(player.lane+turn*dt*(player.speed/150)*handling,-1.34,1.34);
     if(drifting&&Math.abs(turn)>.1&&player.speed>75)player.drift=clamp(player.drift+dt*turn*1.65,-1,1);
     else player.drift*=Math.max(0,1-dt*3.5);
+    const chargingDrift=drifting&&Math.abs(turn)>.1&&player.speed>80;
+    if(chargingDrift)player.driftCharge=Math.min(1.25,player.driftCharge+dt*.78);
+    else if(player.driftCharge>=.35){
+      const charge=player.driftCharge/1.25;
+      player.boost=Math.max(player.boost,.65+charge*.9);
+      player.speed=Math.min(MAX_SPEED+55,player.speed+15+charge*20);
+      player.driftCharge=0;showToast('MINI TURBO!');
+    }else player.driftCharge=Math.max(0,player.driftCharge-dt*.32);
     if(Math.abs(player.lane)>1.02){player.speed=Math.max(72,player.speed-95*dt);player.lane=clamp(player.lane,-1.25,1.25)}
     player.distance+=player.speed*dt*1.75;
     // Smooth rival drivers follow the racing line and occasionally duel.
@@ -170,6 +178,8 @@
     ui.lapProgress.style.width=`${(player.distance%LAP_LENGTH)/LAP_LENGTH*100}%`;
     ui.timer.textContent=formatTime(elapsed);ui.coins.textContent=String(player.coins).padStart(2,'0');
     ui.speed.textContent=String(Math.round(player.speed)).padStart(3,'0');ui.speedArc.style.width=`${clamp(player.speed/MAX_SPEED*100,0,100)}%`;
+    ui.driftArc.style.width=`${clamp(player.driftCharge/1.25*100,0,100)}%`;ui.driftPercent.textContent=`${Math.round(clamp(player.driftCharge/1.25,0,1)*100)}%`;
+    if(audio?.osc)audio.osc.frequency.setTargetAtTime(70+player.speed*.55,audio.currentTime,.08);
     ui.item.querySelector('.item-icon').textContent=player.item?(player.item==='turbo'?'⚡':'◉'):'?';
     if(toastTime>0){toastTime-=dt;if(toastTime<=0)ui.toast.classList.remove('show')}
   }
@@ -186,7 +196,7 @@
     if(player&&player.boost>0){ctx.strokeStyle='#e7ffff55';ctx.lineWidth=2;for(let i=0;i<7;i++){const x=((i*173+time*310)%W),y=H*.55+((i*71)%H*.35);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x-25,y+42);ctx.stroke()}}
   }
   function beginRace(){
-    if(running)return;ui.start.classList.add('hidden');ui.result.classList.add('hidden');player.distance=0;player.lane=0;player.speed=0;player.coins=0;player.item=null;player.boost=0;player.finished=false;racers.forEach((r,i)=>{r.distance=-i*25-25;r.finished=false;r.speed=0});objects.forEach(o=>o.used=false);
+    if(running)return;ui.start.classList.add('hidden');ui.result.classList.add('hidden');player.distance=0;player.lane=0;player.speed=0;player.coins=0;player.item=null;player.boost=0;player.driftCharge=0;player.finished=false;player._lap=1;racers.forEach((r,i)=>{r.distance=-i*25-25;r.finished=false;r.speed=0});objects.forEach(o=>o.used=false);
     const sequence=['3','2','1','VAI!'];let i=0;ui.countdown.textContent=sequence[0];
     const tick=()=>{i++;if(i<sequence.length){ui.countdown.textContent=sequence[i];setTimeout(tick,i===3?430:650)}else{ui.countdown.textContent='';running=true;startedAt=performance.now();last=startedAt}};
     setTimeout(tick,650);
